@@ -1,0 +1,9 @@
+# Generated output — each user generates their own
+index.html
+
+# Personal data — session summaries and deleted list are user-specific
+summaries.json
+deleted.json
+
+# macOS
+.DS_Store
