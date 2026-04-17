@@ -13,15 +13,25 @@ A dashboard that turns your Claude Code session history into a visual, searchabl
 
 ---
 
-## Install
+## Setup — 3 steps, takes 30 seconds
 
-Open Terminal (`Cmd + Space` → type **Terminal** → Enter), paste this and hit Enter:
+**Step 1** — Open Terminal
+Press `Cmd + Space`, type **Terminal**, hit Enter
+
+**Step 2** — Paste this and hit Enter:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashiquemuneerv-rgb/claude-sessions/main/install.sh | bash
 ```
 
-That's it. The dashboard opens in your browser automatically.
+Your dashboard will open in the browser automatically.
+
+**Step 3** — Bookmark it
+Once the dashboard opens, press `Cmd + D` to bookmark it so you can come back anytime.
+
+**Where are the files saved?**
+Everything is stored in one folder: `~/Documents/claude-sessions/`
+Open Finder → Documents → **claude-sessions**
 
 **What happens behind the scenes:**
 - Creates `~/Documents/claude-sessions/` folder
@@ -35,9 +45,10 @@ That's it. The dashboard opens in your browser automatically.
 
 | Task | How |
 |------|-----|
-| View dashboard | Open `~/Documents/claude-sessions/index.html` in any browser |
-| Manual refresh | Double-click `run.command` in the `claude-sessions` folder |
+| View dashboard | Open your bookmark or `~/Documents/claude-sessions/index.html` |
 | Auto-update | Happens automatically after every Claude Code session — nothing to do |
+| Manual refresh | Double-click `run.command` in the `claude-sessions` folder |
+| Get latest tool updates | Double-click `run.command` — it always pulls the latest version |
 
 ---
 
