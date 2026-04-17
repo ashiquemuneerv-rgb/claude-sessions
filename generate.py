@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """
-Auto-generates ~/Documents/sessions/index.html from ~/.claude/projects/ session files.
-Run manually or via Claude Code Stop hook.
+Auto-generates index.html from ~/.claude/projects/ session files.
+Run manually or double-click run.command (macOS).
 
-Share this file with colleagues — it auto-detects paths from their home directory.
-To add the Stop hook so it runs automatically after every session, add this to
-~/.claude/settings.json under "hooks":
-
-  "Stop": [{"matcher": "", "hooks": [{"type": "command",
-    "command": "python3 ~/Documents/sessions/generate.py"}]}]
+Setup is automatic — on first run this script installs itself as a Claude Code
+Stop hook so the dashboard regenerates after every session.
 """
 
 import json
@@ -33,7 +29,6 @@ OUT_DIR        = Path(__file__).resolve().parent
 OUTPUT_FILE    = OUT_DIR / "index.html"
 DELETED_FILE   = OUT_DIR / "deleted.json"
 SUMMARIES_FILE = OUT_DIR / "summaries.json"
-FONT_WOFF2     = OUT_DIR / "material-symbols.woff2"
 
 # Claude Code stores project dirs as the filesystem path with "/" replaced by "-"
 # e.g. /Users/alice -> -Users-alice,  /home/bob -> -home-bob
@@ -384,59 +379,23 @@ def scan():
 
     return projects
 
-# ── Font cache ────────────────────────────────────────────────────────────────
+# ── Font ─────────────────────────────────────────────────────────────────────
 
-_FONT_CSS_URL = (
-    "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-    ":opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+# Subset CDN link — only the icons actually used (~15 KB vs 3.8 MB full font)
+_FONT_ICONS = ",".join(sorted([
+    "arrow_forward", "bar_chart", "chat_bubble", "check", "close",
+    "close_fullscreen", "content_copy", "dark_mode", "delete", "download",
+    "expand_less", "expand_more", "folder_open", "history", "inventory_2",
+    "keyboard", "light_mode", "open_in_full", "restore", "search", "star",
+    "summarize", "terminal", "tune", "unfold_more", "upload", "view_column",
+]))
+FONT_LINK = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2'
+    f'?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200'
+    f'&display=swap&icon_names={_FONT_ICONS}"/>'
 )
-_FONT_UA = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
-
-def ensure_font_css() -> str:
-    """Return @font-face CSS for Material Symbols Outlined.
-
-    Downloads the woff2 once to material-symbols.woff2 in the output directory,
-    then references it locally — no network request on every page load.
-    Falls back to the Google Fonts CDN link if the download fails.
-    """
-    if FONT_WOFF2.exists():
-        # Already downloaded — just return the local @font-face rule
-        return _local_font_face()
-
-    print("Downloading Material Symbols font (one-time)…", file=sys.stderr)
-    try:
-        # Fetch the CSS to find the woff2 URL
-        req = urllib.request.Request(_FONT_CSS_URL, headers={"User-Agent": _FONT_UA})
-        css = urllib.request.urlopen(req, timeout=15).read().decode()
-
-        m = re.search(
-            r"url\(['\"]?(https://fonts\.gstatic\.com/[^)'\"]+\.woff2)['\"]?\)",
-            css
-        )
-        if not m:
-            raise ValueError("No woff2 URL found in Google Fonts CSS response")
-
-        woff2_url = m.group(1)
-        data = urllib.request.urlopen(woff2_url, timeout=30).read()
-        FONT_WOFF2.write_bytes(data)
-        kb = len(data) // 1024
-        print(f"  Saved {FONT_WOFF2.name} ({kb} KB)", file=sys.stderr)
-        return _local_font_face()
-    except Exception as exc:
-        print(f"Warning: font download failed ({exc}). Falling back to CDN.", file=sys.stderr)
-        return ""  # build_html will use the CDN <link> tag instead
-
-def _local_font_face() -> str:
-    return """@font-face {
-  font-family: 'Material Symbols Outlined';
-  font-style: normal;
-  font-weight: 100 700;
-  font-display: block;
-  src: url('material-symbols.woff2') format('woff2');
-}"""
 
 # ── HTML generation ───────────────────────────────────────────────────────────
 
@@ -564,7 +523,7 @@ def render_session_data(projects: dict) -> str:
             )
     return "{\n" + ",\n".join(entries) + "\n}"
 
-def build_html(projects: dict, font_css: str = "") -> str:
+def build_html(projects: dict) -> str:
     total     = sum(len(v) for v in projects.values())
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -667,7 +626,7 @@ def build_html(projects: dict, font_css: str = "") -> str:
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Claude Code Sessions</title>
-  {('<style>' + font_css + '</style>') if font_css else '<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"/>'}
+  {FONT_LINK}
   <style>
     /* ── Design Tokens ──────────────────────────────────────────────────── */
     :root {{
@@ -2462,13 +2421,47 @@ def build_html(projects: dict, font_css: str = "") -> str:
 </body>
 </html>"""
 
+# ── Hook installer ────────────────────────────────────────────────────────────
+
+def install_hook() -> None:
+    """Auto-install the Stop hook into ~/.claude/settings.json if not already present."""
+    settings_path = HOME / ".claude" / "settings.json"
+    script_path   = str(Path(__file__).resolve())
+    hook_command  = f"python3 {script_path}"
+
+    # Read existing settings or start fresh
+    if settings_path.exists():
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            settings = {}
+    else:
+        settings = {}
+
+    # Check if our hook is already present
+    for entry in settings.get("hooks", {}).get("Stop", []):
+        for hook in entry.get("hooks", []):
+            if hook.get("command") == hook_command:
+                return  # Already installed, nothing to do
+
+    # Add the hook
+    settings.setdefault("hooks", {}).setdefault("Stop", []).append({
+        "matcher": "",
+        "hooks": [{"type": "command", "command": hook_command}],
+    })
+
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    settings_path.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    print(f"✓ Auto-update hook installed in {settings_path}")
+    print("  Your dashboard will now regenerate after every Claude Code session.")
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    font_css = ensure_font_css()
+    install_hook()
     projects = scan()
-    html     = build_html(projects, font_css=font_css)
+    html     = build_html(projects)
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(html, encoding="utf-8")
     total = sum(len(v) for v in projects.values())
-    print(f"Generated {OUTPUT_FILE} — {total} sessions across {len(projects)} projects")
+    print(f"✓ Generated {OUTPUT_FILE} — {total} sessions across {len(projects)} projects")

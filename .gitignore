@@ -5,5 +5,11 @@ index.html
 summaries.json
 deleted.json
 
+# No longer used (replaced by CDN)
+material-symbols.woff2
+
+# Claude Code local config
+.claude/
+
 # macOS
 .DS_Store
