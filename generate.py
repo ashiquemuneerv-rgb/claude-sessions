@@ -819,7 +819,7 @@ def build_html(projects: dict) -> str:
     .col-vis-menu label.col-drag-over{{background:var(--teal-dim);color:var(--teal-text)}}
 
     /* ── Column hide classes ────────────────────────────────────────────── */
-    body.hide-col-star .col-star{{display:none}}body.hide-col-label .col-label{{display:none}}
+    body.hide-col-title .col-title{{display:none}}body.hide-col-star .col-star{{display:none}}body.hide-col-label .col-label{{display:none}}
     body.hide-col-notes .col-notes{{display:none}}body.hide-col-topic .col-topic{{display:none}}
     body.hide-col-cat .col-cat{{display:none}}body.hide-col-size .col-size{{display:none}}
     body.hide-col-msgs .col-msgs{{display:none}}body.hide-col-tok .col-tok{{display:none}}
@@ -1222,7 +1222,8 @@ def build_html(projects: dict) -> str:
               <label draggable="true" data-col="star"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="star" checked> Stars</label>
               <label draggable="true" data-col="label"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="label" checked> Labels</label>
               <label draggable="true" data-col="notes"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="notes" checked> Notes</label>
-              <label draggable="true" data-col="topic"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="topic" checked> Subtitle</label>
+              <label draggable="true" data-col="title"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="title" checked> Title</label>
+              <label draggable="true" data-col="topic"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="topic" checked> First Message</label>
               <label draggable="true" data-col="cat"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="cat" checked> Category</label>
               <label draggable="true" data-col="date"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="date" checked> Date</label>
               <label draggable="true" data-col="summary"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="summary" checked> Summary</label>
@@ -2290,9 +2291,9 @@ def build_html(projects: dict) -> str:
 
     // ── Column drag-to-reorder ───────────────────────────────────────────────
     // Columns that map directly to a <th>/<td> class (topic is inside title cell)
-    var REORDERABLE = ['star','label','notes','cat','date','summary','size','msgs','tok','cost'];
+    var REORDERABLE = ['title','star','label','notes','cat','date','summary','size','msgs','tok','cost'];
     // Full column order including fixed columns
-    var FULL_COLS   = ['check','num','star','label','title','notes','summary','cat','date','size','msgs','tok','cost','menu'];
+    var FULL_COLS   = ['check','num','title','star','label','notes','summary','cat','date','size','msgs','tok','cost','menu'];
 
     function getMenuColOrder() {{
       var order = [];
