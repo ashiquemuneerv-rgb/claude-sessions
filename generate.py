@@ -386,8 +386,8 @@ _FONT_ICONS = ",".join(sorted([
     "arrow_forward", "bar_chart", "chat_bubble", "check", "close",
     "close_fullscreen", "content_copy", "dark_mode", "delete", "download",
     "expand_less", "expand_more", "folder_open", "history", "inventory_2",
-    "keyboard", "light_mode", "open_in_full", "restore", "search", "star",
-    "summarize", "terminal", "tune", "unfold_more", "upload", "view_column",
+    "keyboard", "light_mode", "more_vert", "open_in_full", "restore", "search",
+    "star", "summarize", "terminal", "tune", "unfold_more", "upload", "view_column",
 ]))
 FONT_LINK = (
     '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
@@ -456,20 +456,25 @@ def render_table(sessions: list, proj_dir: str) -> str:
               <div class="title-main"><span class="title-display" onclick="editTitle('{s['id']}', this)">Add title...</span></div>
               <div class="title-sub col-topic">{first_sub}</div>
               <div class="title-id">{esc(s['short_id'])}</div>
+              <button id="copybtn-{s['id']}" class="copy-resume-btn" onclick="copyResume('{s['id']}')" title="{esc(resume_cmd)}"><span class="mi mi-xs">arrow_forward</span> Copy resume cmd</button>
             </td>
             <td class="col-notes"><span class="notes-disp" id="notes-{s['id']}" onclick="editNotes('{s['id']}', this)">+</span></td>
+            <td class="col-summary"><button class="sum-btn" onclick="openSummary('{s['id']}')"><span class="mi mi-sm">summarize</span> Summary</button></td>
             <td class="col-cat">{cat_pills}</td>
             <td class="date col-date" title="{esc(s['date'])}" data-iso="{esc(s['date_iso'])}"></td>
             <td class="size col-size">{esc(s['size'])}</td>
             <td class="msgs col-msgs">{s['msg_count']}</td>
             <td class="tok col-tok" title="Input: {s['input_tokens']:,}&#10;Output: {s['output_tokens']:,}">{fmt_tokens(s['total_tokens'])}</td>
             <td class="cost-cell col-cost">{fmt_cost(s['cost_usd'])}</td>
-            <td class="action-cell">
-              <button class="sum-btn" onclick="openSummary('{s['id']}')"><span class="mi mi-sm">summarize</span></button>
-              <button class="view-btn" onclick="openModal('{s['id']}')"><span class="mi mi-sm">chat_bubble</span></button>
-              <button id="copybtn-{s['id']}" class="copy-btn" onclick="copyResume('{s['id']}')" title="{esc(resume_cmd)}"><span class="mi mi-xs">arrow_forward</span></button>
-              <button class="arch-btn" onclick="archiveSession('{s['id']}')" title="Archive"><span class="mi mi-sm">inventory_2</span></button>
-              <button class="del-btn" onclick="confirmDelete('{s['id']}')"><span class="mi mi-sm">delete</span></button>
+            <td class="col-menu">
+              <div class="row-menu-wrap">
+                <button class="row-menu-btn" onclick="toggleRowMenu(this)"><span class="mi" style="font-size:20px">more_vert</span></button>
+                <div class="row-menu-dropdown">
+                  <button onclick="openModal('{s['id']}');closeRowMenus()"><span class="mi mi-sm">chat_bubble</span> View Chat</button>
+                  <button onclick="archiveSession('{s['id']}');closeRowMenus()"><span class="mi mi-sm">inventory_2</span> Archive</button>
+                  <button class="row-menu-danger" onclick="confirmDelete('{s['id']}');closeRowMenus()"><span class="mi mi-sm">delete</span> Delete</button>
+                </div>
+              </div>
             </td>
           </tr>""")
 
@@ -484,13 +489,14 @@ def render_table(sessions: list, proj_dir: str) -> str:
             <th class="col-label">Label</th>
             <th class="col-title sortable" onclick="sortBy('title',this)">Title <span class="sort-icon">unfold_more</span></th>
             <th class="col-notes">Notes</th>
+            <th class="col-summary">Summary</th>
             <th class="col-cat sortable" onclick="sortBy('cat',this)">Cat <span class="sort-icon">unfold_more</span></th>
             <th class="col-date sortable" onclick="sortBy('date',this)">Date <span class="sort-icon">unfold_more</span></th>
             <th class="col-size">Size</th>
             <th class="col-msgs sortable" onclick="sortBy('msgs',this)">Msgs <span class="sort-icon">unfold_more</span></th>
             <th class="col-tok sortable" onclick="sortBy('tokens',this)" title="Hover rows for breakdown">Tokens <span class="sort-icon">unfold_more</span></th>
             <th class="col-cost sortable" onclick="sortBy('cost',this)">Cost <span class="sort-icon">unfold_more</span></th>
-            <th class="col-actions"></th>
+            <th class="col-menu"></th>
           </tr>
         </thead>
         <tbody>{''.join(rows)}
@@ -848,7 +854,7 @@ def build_html(projects: dict) -> str:
     tbody tr{{border-bottom:1px solid var(--border);transition:background .12s}}
     tbody tr:last-child{{border-bottom:none}}
     tbody tr:hover{{background:var(--teal-dim)}}
-    tbody tr:hover .action-cell{{opacity:1}}
+    tbody tr:hover .copy-resume-btn{{opacity:1}}
     td{{padding:12px 16px;vertical-align:middle}}
     .num{{color:var(--text-3);font-size:12px}}
     .session-id{{font-family:"SF Mono","Fira Code",monospace;font-size:11px;color:var(--primary);white-space:nowrap}}
@@ -904,8 +910,24 @@ def build_html(projects: dict) -> str:
     body.dark .cp-shell{{background:#1e293b;color:#94a3b8}}
 
     /* Action cell — hidden until row hover */
-    .action-cell{{opacity:0;transition:opacity .15s;white-space:nowrap;display:flex;align-items:center;gap:4px}}
-    .sum-btn{{display:inline-flex;align-items:center;justify-content:center;font-size:13px;padding:4px 7px;background:var(--success-dim);border:1px solid transparent;color:var(--success);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}}
+    /* Copy resume button — lives under title, visible on row hover */
+    .copy-resume-btn{{display:inline-flex;align-items:center;gap:3px;margin-top:5px;font-size:11px;padding:3px 7px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-3);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;white-space:nowrap;opacity:0}}
+    .copy-resume-btn:hover{{background:var(--primary-dim);border-color:var(--primary);color:var(--primary)}}
+    .copy-resume-btn.copied{{background:var(--success-dim);border-color:var(--success);color:var(--success);opacity:1}}
+    /* Summary column */
+    .col-summary{{white-space:nowrap}}
+    /* 3-dot row menu */
+    .col-menu{{width:32px;text-align:center;padding:8px 4px}}
+    .row-menu-wrap{{position:relative;display:inline-block}}
+    .row-menu-btn{{background:none;border:none;color:var(--text-3);cursor:pointer;padding:2px 4px;border-radius:var(--radius-sm);transition:color .15s,background .15s;line-height:1;display:flex;align-items:center}}
+    .row-menu-btn:hover{{color:var(--text);background:var(--surface-3)}}
+    .row-menu-dropdown{{display:none;position:absolute;right:0;top:100%;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;min-width:150px;padding:4px 0}}
+    .row-menu-dropdown.open{{display:block}}
+    .row-menu-dropdown button{{display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:background .12s}}
+    .row-menu-dropdown button:hover{{background:var(--teal-dim);color:var(--teal-text)}}
+    .row-menu-dropdown button.row-menu-danger{{color:var(--danger)}}
+    .row-menu-dropdown button.row-menu-danger:hover{{background:var(--danger-dim);color:var(--danger)}}
+    .sum-btn{{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:4px 9px;background:var(--success-dim);border:1px solid transparent;color:var(--success);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;white-space:nowrap}}
     .sum-btn:hover{{background:var(--success);color:#fff}}
     .view-btn{{display:inline-flex;align-items:center;justify-content:center;font-size:13px;padding:4px 7px;background:var(--primary-dim);border:1px solid transparent;color:var(--primary);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}}
     .view-btn:hover{{background:var(--primary);color:#fff}}
@@ -1682,6 +1704,19 @@ def build_html(projects: dict) -> str:
     // ── Delete ──────────────────────────────────────────────────────────────
     var pendingDeleteId = null;
 
+    function toggleRowMenu(btn) {{
+      closeRowMenus(btn);
+      var dd = btn.nextElementSibling;
+      dd.classList.toggle('open');
+    }}
+    function closeRowMenus(except) {{
+      document.querySelectorAll('.row-menu-dropdown.open').forEach(function(d) {{
+        if (d.previousElementSibling !== except) d.classList.remove('open');
+      }});
+    }}
+    document.addEventListener('click', function(e) {{
+      if (!e.target.closest('.row-menu-wrap')) closeRowMenus();
+    }});
     function confirmDelete(id) {{
       var s = sessions[id];
       if (!s) return;
@@ -2376,7 +2411,7 @@ def build_html(projects: dict) -> str:
         var btn = document.getElementById('copybtn-' + id);
         if (btn) {{
           var origHtml = btn.innerHTML;
-          btn.innerHTML = '<span class="mi mi-xs">check</span> Copied';
+          btn.innerHTML = '<span class="mi mi-xs">check</span> Copied!';
           btn.classList.add('copied');
           setTimeout(function() {{ btn.innerHTML = origHtml; btn.classList.remove('copied'); }}, 2000);
         }}
