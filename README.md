@@ -4,18 +4,9 @@ A dashboard that turns your Claude Code session history into a visual, searchabl
 
 ---
 
-## Why use it?
-
-- See exactly how much Claude Code you're using and what it costs
-- Search and revisit past sessions
-- Track which projects you spend the most time on
-- GitHub-style activity heatmap across all sessions
-
----
-
 ## Setup — 3 steps, takes 30 seconds
 
-**Step 1** — Open Terminal
+**Step 1** — Open Terminal  
 Press `Cmd + Space`, type **Terminal**, hit Enter
 
 **Step 2** — Paste this and hit Enter:
@@ -26,11 +17,11 @@ curl -fsSL https://raw.githubusercontent.com/ashiquemuneerv-rgb/claude-sessions/
 
 Your dashboard will open in the browser automatically.
 
-**Step 3** — Bookmark it
+**Step 3** — Bookmark it  
 Once the dashboard opens, press `Cmd + D` to bookmark it so you can come back anytime.
 
-**Where are the files saved?**
-Everything is stored in one folder: `~/Documents/claude-sessions/`
+**Where are the files saved?**  
+Everything is stored in one folder: `~/Documents/claude-sessions/`  
 Open Finder → Documents → **claude-sessions**
 
 **What happens behind the scenes:**
@@ -52,23 +43,135 @@ Open Finder → Documents → **claude-sessions**
 
 ---
 
-## Features
+## How to use
 
-**Stats page**
-- Total sessions, messages, tokens, and estimated cost
-- Activity heatmap (GitHub-style, past 52 weeks)
-- Per-project breakdown table
+### Stats Page
 
-**Sessions page**
-- Search across all sessions by title, content, or summary
-- Filter by date, project, category, or starred status
-- 14 auto-detected categories: `Figma` `Git` `Python` `JavaScript` `Docker` `API` `Testing` and more
-- Star, label, and add notes to sessions
-- View full chat history per session
-- Export to CSV or Markdown
-- Bulk archive / delete
+The Stats page is your usage overview — open it by clicking **Stats** in the left sidebar.
 
-**Keyboard shortcuts**
+![Stats page overview](docs/screenshots/stats-page.png)
+
+**What you see:**
+- **Total sessions, messages, tokens, and estimated cost** across all time
+- **Activity heatmap** — GitHub-style grid showing which days you used Claude Code most (hover a cell to see the date and session count)
+- **Sparkline** — a bar chart of the last 12 weeks of activity
+- **Project breakdown table** — which folders you work in most, with message and token counts per project
+
+> **Tip:** Collapse the heatmap by clicking the toggle button at the top-right of the card to save screen space.
+
+---
+
+### Sessions Page
+
+Click **Sessions** in the sidebar to see your full session history.
+
+![Sessions page — folder view](docs/screenshots/sessions-page.png)
+
+**Sub-tabs across the top:**
+- **Recent** — sessions from the last 7 days across all projects
+- **Project folders** — one tab per project directory (e.g. `ViewTogether-Demo`, `friday-game`)
+- **Archived** — sessions you've archived
+
+The dashboard remembers which tab you had open — reloading brings you back to the same place.
+
+---
+
+### Search & Filter
+
+![Search and filter](docs/screenshots/search-filter.png)
+
+**Search** — click the search bar (or press `/`) and type anything. The table filters in real time across session titles, notes, labels, and categories.
+
+**Filter button** — click the **Filter** icon to open the filter panel:
+- Filter by **date range** (pick start and end dates)
+- Filter by **category** (Python, Git, JavaScript, Docker, etc.)
+- Filter by **starred** sessions only
+
+Active filters appear as removable chips below the search bar.
+
+---
+
+### Session columns — show, hide, and reorder
+
+![Column menu](docs/screenshots/columns-menu.png)
+
+Click the **Cols** button (top-right of the sessions toolbar) to open the column menu:
+
+- **Toggle any column on/off** using the checkboxes
+- **Drag columns** up/down in the menu to reorder them in the table
+
+Available columns: Title · Stars · Labels · Notes · Summary · Category · Date · Size · Messages · Tokens · Cost
+
+Your column preferences are saved automatically and persist across reloads.
+
+---
+
+### Working with sessions
+
+Each row in the table is one session. Here's what you can do:
+
+![Session row actions](docs/screenshots/session-row.png)
+
+| Action | How |
+|--------|-----|
+| **Edit title** | Click the title text in any row — type and press Enter |
+| **Star a session** | Click the star icon in the Star column |
+| **Set a colour label** | Click the dot in the Label column — pick a colour |
+| **Add notes** | Click the `+` in the Notes column — type and press Enter |
+| **Copy resume command** | Hover the row → click **Copy resume cmd** under the title — paste in Terminal to continue the session |
+| **View full chat** | Click ··· → **View Chat** |
+| **Get AI summary** | Click the **Summary** button in the Summary column |
+| **Archive** | Click ··· → **Archive** |
+
+---
+
+### View full chat
+
+![Chat modal](docs/screenshots/chat-modal.png)
+
+Click **··· → View Chat** on any row to open the full conversation in a modal:
+
+- Scroll through all messages with timestamps
+- Search within the chat using the search bar in the modal header
+- Click the expand icon to go full-screen
+- Copy any individual message with the copy button that appears on hover
+
+---
+
+### AI Summary
+
+![Summary popup](docs/screenshots/summary.png)
+
+Click the **Summary** button on any session to see an AI-generated summary of what was discussed. Useful for quickly recalling what a session was about without reading the full chat.
+
+---
+
+### Bulk actions
+
+![Bulk action bar](docs/screenshots/bulk-actions.png)
+
+Select multiple sessions using the checkboxes (or the checkbox in the header to select all visible rows):
+
+- **Archive** all selected
+- **Set label** for all selected at once
+- **Export** selected sessions to CSV or Markdown
+
+---
+
+### Dark / Light mode
+
+Press `d` anywhere (or click the sun/moon icon in the sidebar bottom) to toggle between dark and light mode.
+
+![Dark mode](docs/screenshots/dark-mode.png)
+
+Your preference is saved automatically.
+
+---
+
+### Keyboard shortcuts
+
+Press `?` to open the shortcuts panel.
+
 | Key | Action |
 |-----|--------|
 | `/` | Focus search |
@@ -95,13 +198,13 @@ Current rates: [anthropic.com/pricing](https://www.anthropic.com/pricing)
 
 ## Troubleshooting
 
-**"No sessions found"**
+**"No sessions found"**  
 Make sure Claude Code has been used at least once. Sessions are stored in `~/.claude/projects/`.
 
-**Dashboard not auto-updating**
+**Dashboard not auto-updating**  
 Run the install command again — it will re-install the hook without affecting your existing data.
 
-**Costs look wrong**
+**Costs look wrong**  
 Update `INPUT_COST_PER_M` and `OUTPUT_COST_PER_M` at the top of `generate.py`.
 
 ---
@@ -133,7 +236,7 @@ Update `INPUT_COST_PER_M` and `OUTPUT_COST_PER_M` at the top of `generate.py`.
 - Star buttons now show the correct colour in dark mode
 - Date filter picker renders correctly in both themes
 - Heatmap card shadow is now theme-aware
-- Search highlight (`.hl`) works correctly in dark mode
+- Search highlight works correctly in dark mode
 - Message copy button uses theme colours instead of hardcoded black/white
 - Label swatch hover border is now theme-aware
 - Empty state text ("No archived sessions" etc.) is readable in dark mode
