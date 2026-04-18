@@ -385,9 +385,10 @@ def scan():
 _FONT_ICONS = ",".join(sorted([
     "arrow_forward", "bar_chart", "chat_bubble", "check", "close",
     "close_fullscreen", "content_copy", "dark_mode", "delete", "download",
-    "expand_less", "expand_more", "folder_open", "history", "inventory_2",
-    "keyboard", "light_mode", "more_vert", "open_in_full", "restore", "search",
-    "star", "summarize", "terminal", "tune", "unfold_more", "upload", "view_column",
+    "drag_indicator", "expand_less", "expand_more", "folder_open", "history",
+    "inventory_2", "keyboard", "light_mode", "more_vert", "open_in_full",
+    "restore", "search", "star", "summarize", "terminal", "tune", "unfold_more",
+    "upload", "view_column",
 ]))
 FONT_LINK = (
     '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
@@ -830,9 +831,13 @@ def build_html(projects: dict) -> str:
     .col-vis-wrap{{position:relative;display:inline-block}}
     .col-vis-menu{{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:200;min-width:180px;box-shadow:0 12px 32px rgba(0,0,0,.5)}}
     .col-vis-menu.open{{display:block}}
-    .col-vis-menu label{{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);cursor:pointer;padding:5px 0;user-select:none}}
-    .col-vis-menu label:hover{{color:var(--text)}}
+    .col-vis-menu label{{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);cursor:pointer;padding:5px 6px;border-radius:6px;user-select:none;transition:background .12s}}
+    .col-vis-menu label:hover{{color:var(--text);background:var(--surface-2)}}
     .col-vis-menu input[type=checkbox]{{accent-color:var(--primary);cursor:pointer}}
+    .col-drag-handle{{font-size:16px;color:var(--text-3);cursor:grab;margin-right:-4px;flex-shrink:0}}
+    .col-drag-handle:active{{cursor:grabbing}}
+    .col-vis-menu label.col-dragging{{opacity:.4}}
+    .col-vis-menu label.col-drag-over{{background:var(--teal-dim);color:var(--teal-text)}}
 
     /* ── Column hide classes ────────────────────────────────────────────── */
     body.hide-col-star .col-star{{display:none}}body.hide-col-label .col-label{{display:none}}
@@ -1242,15 +1247,15 @@ def build_html(projects: dict) -> str:
           <div class="col-vis-wrap">
             <button class="icon-btn" onclick="toggleColMenu()" title="Columns"><span class="mi mi-sm">view_column</span> Cols</button>
             <div class="col-vis-menu" id="col-vis-menu">
-              <label><input type="checkbox" class="col-toggle" data-col="star" checked> Stars</label>
-              <label><input type="checkbox" class="col-toggle" data-col="label" checked> Labels</label>
-              <label><input type="checkbox" class="col-toggle" data-col="notes" checked> Notes</label>
-              <label><input type="checkbox" class="col-toggle" data-col="topic" checked> Subtitle</label>
-              <label><input type="checkbox" class="col-toggle" data-col="cat" checked> Category</label>
-              <label><input type="checkbox" class="col-toggle" data-col="size" checked> Size</label>
-              <label><input type="checkbox" class="col-toggle" data-col="msgs" checked> Messages</label>
-              <label><input type="checkbox" class="col-toggle" data-col="tok" checked> Tokens</label>
-              <label><input type="checkbox" class="col-toggle" data-col="cost" checked> Cost</label>
+              <label draggable="true" data-col="star"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="star" checked> Stars</label>
+              <label draggable="true" data-col="label"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="label" checked> Labels</label>
+              <label draggable="true" data-col="notes"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="notes" checked> Notes</label>
+              <label draggable="true" data-col="topic"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="topic" checked> Subtitle</label>
+              <label draggable="true" data-col="cat"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="cat" checked> Category</label>
+              <label draggable="true" data-col="size"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="size" checked> Size</label>
+              <label draggable="true" data-col="msgs"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="msgs" checked> Messages</label>
+              <label draggable="true" data-col="tok"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="tok" checked> Tokens</label>
+              <label draggable="true" data-col="cost"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="cost" checked> Cost</label>
             </div>
           </div>
           <div class="actions-wrap">
@@ -2381,6 +2386,86 @@ def build_html(projects: dict) -> str:
       }});
     }}
 
+    // ── Column drag-to-reorder ───────────────────────────────────────────────
+    // Columns that map directly to a <th>/<td> class (topic is inside title cell)
+    var REORDERABLE = ['star','label','notes','cat','size','msgs','tok','cost'];
+    // Full column order including fixed columns
+    var FULL_COLS   = ['check','num','star','label','title','notes','summary','cat','date','size','msgs','tok','cost','menu'];
+
+    function getMenuColOrder() {{
+      var order = [];
+      document.querySelectorAll('#col-vis-menu label[data-col]').forEach(function(lbl) {{
+        var col = lbl.getAttribute('data-col');
+        if (REORDERABLE.indexOf(col) >= 0) order.push(col);
+      }});
+      return order;
+    }}
+
+    function applyColOrder() {{
+      var reorderable = getMenuColOrder();
+      var ri = 0;
+      var fullOrder = FULL_COLS.map(function(col) {{
+        return REORDERABLE.indexOf(col) >= 0 ? reorderable[ri++] : col;
+      }});
+      document.querySelectorAll('table').forEach(function(table) {{
+        table.querySelectorAll('tr').forEach(function(row) {{
+          fullOrder.forEach(function(col) {{
+            var cell = row.querySelector('.col-' + col);
+            if (cell) row.appendChild(cell);
+          }});
+        }});
+      }});
+      localStorage.setItem('claude-col-order', JSON.stringify(reorderable));
+    }}
+
+    function loadColOrder() {{
+      var saved = localStorage.getItem('claude-col-order');
+      if (!saved) return;
+      try {{
+        var order = JSON.parse(saved);
+        var menu = document.getElementById('col-vis-menu');
+        // Reorder labels in menu to match saved order
+        order.forEach(function(col) {{
+          var lbl = menu.querySelector('label[data-col="' + col + '"]');
+          if (lbl) menu.appendChild(lbl);
+        }});
+        applyColOrder();
+      }} catch(e) {{}}
+    }}
+
+    var _dragLbl = null;
+    function initColDrag() {{
+      var menu = document.getElementById('col-vis-menu');
+      menu.querySelectorAll('label[draggable]').forEach(function(lbl) {{
+        lbl.addEventListener('dragstart', function(e) {{
+          _dragLbl = lbl;
+          e.dataTransfer.effectAllowed = 'move';
+          setTimeout(function() {{ lbl.classList.add('col-dragging'); }}, 0);
+        }});
+        lbl.addEventListener('dragend', function() {{
+          lbl.classList.remove('col-dragging');
+          menu.querySelectorAll('label').forEach(function(l) {{ l.classList.remove('col-drag-over'); }});
+          applyColOrder();
+        }});
+        lbl.addEventListener('dragover', function(e) {{
+          e.preventDefault();
+          if (!_dragLbl || _dragLbl === lbl) return;
+          menu.querySelectorAll('label').forEach(function(l) {{ l.classList.remove('col-drag-over'); }});
+          lbl.classList.add('col-drag-over');
+          var rect = lbl.getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) {{
+            menu.insertBefore(_dragLbl, lbl);
+          }} else {{
+            menu.insertBefore(_dragLbl, lbl.nextSibling);
+          }}
+        }});
+        lbl.addEventListener('dragleave', function() {{
+          lbl.classList.remove('col-drag-over');
+        }});
+        lbl.addEventListener('drop', function(e) {{ e.preventDefault(); }});
+      }});
+    }}
+
     // ── Dark mode (follows OS by default; localStorage overrides) ───────────
     function applyTheme(dark) {{
       document.body.classList.toggle('dark', dark);
@@ -2442,6 +2527,8 @@ def build_html(projects: dict) -> str:
     loadLabels();
     loadNotes();
     loadColVis();
+    initColDrag();
+    loadColOrder();
     loadDarkMode();
     // Populate relative dates in all static date cells
     document.querySelectorAll('td.col-date[data-iso]').forEach(function(td) {{
