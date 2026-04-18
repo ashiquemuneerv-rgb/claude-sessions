@@ -430,7 +430,6 @@ def render_table(sessions: list, proj_dir: str) -> str:
             for c in cats
         ) + '</div>'
         corpus_esc = esc(s["search_corpus"].replace('"', ""))
-        first_sub  = esc(s['first_msg'][:80])
         rows.append(f"""
           <tr data-id="{s['id']}" data-search="{corpus_esc}" data-date="{s['date_iso']}" data-msgs="{s['msg_count']}" data-tokens="{s['total_tokens']}" data-cost="{s['cost_usd']:.6f}" data-cat="{data_cat}">
             <td class="col-check"><input type="checkbox" class="row-check" id="chk-{s['id']}" onchange="toggleRowCheck('{s['id']}')"></td>
@@ -439,7 +438,6 @@ def render_table(sessions: list, proj_dir: str) -> str:
             <td class="col-label"><span class="label-dot" id="ldot-{s['id']}" onclick="openLabelPicker('{s['id']}', this)" title="Set label"></span></td>
             <td class="title-cell col-title" data-id="{s['id']}">
               <div class="title-main"><span class="title-display" onclick="editTitle('{s['id']}', this)">Add title...</span></div>
-              <div class="title-sub col-topic">{first_sub}</div>
               <div class="title-id">{esc(s['short_id'])}</div>
               <button id="copybtn-{s['id']}" class="copy-resume-btn" onclick="copyResume('{s['id']}')" title="{esc(resume_cmd)}"><span class="mi mi-xs">arrow_forward</span> Copy resume cmd</button>
             </td>
@@ -820,7 +818,7 @@ def build_html(projects: dict) -> str:
 
     /* ── Column hide classes ────────────────────────────────────────────── */
     body.hide-col-title .col-title{{display:none}}body.hide-col-star .col-star{{display:none}}body.hide-col-label .col-label{{display:none}}
-    body.hide-col-notes .col-notes{{display:none}}body.hide-col-topic .col-topic{{display:none}}
+    body.hide-col-notes .col-notes{{display:none}}
     body.hide-col-cat .col-cat{{display:none}}body.hide-col-size .col-size{{display:none}}
     body.hide-col-msgs .col-msgs{{display:none}}body.hide-col-tok .col-tok{{display:none}}
     body.hide-col-cost .col-cost{{display:none}}body.hide-col-date .col-date{{display:none}}body.hide-col-summary .col-summary{{display:none}}
@@ -843,7 +841,6 @@ def build_html(projects: dict) -> str:
     .num{{color:var(--text-3);font-size:12px}}
     .session-id{{font-family:"SF Mono","Fira Code",monospace;font-size:11px;color:var(--primary);white-space:nowrap}}
     .session-id span{{color:var(--text-3)}}
-    .topic{{color:var(--text-2);line-height:1.5;max-width:240px;font-size:12px}}
     .date{{white-space:nowrap;color:var(--text-2);font-size:12px}}
     .size{{white-space:nowrap;color:var(--text-3);font-size:12px}}
     .msgs{{text-align:center;color:var(--text-2);font-size:12px}}
@@ -851,7 +848,6 @@ def build_html(projects: dict) -> str:
     /* Title cell two-line layout */
     .title-cell{{min-width:180px;max-width:260px}}
     .title-main{{margin-bottom:2px}}
-    .title-sub{{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;line-height:1.4}}
     .title-id{{font-family:"SF Mono","Fira Code",monospace;font-size:10px;color:var(--text-3);margin-top:1px;line-height:1}}
     .title-display{{color:var(--text-2);font-size:12.5px;cursor:pointer;border-radius:4px;padding:2px 5px;margin:-2px -5px;transition:background .15s,color .15s;display:inline-block;line-height:1.4}}
     .title-display:hover{{background:var(--surface-3);color:var(--text)}}
@@ -1223,7 +1219,6 @@ def build_html(projects: dict) -> str:
               <label draggable="true" data-col="label"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="label" checked> Labels</label>
               <label draggable="true" data-col="notes"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="notes" checked> Notes</label>
               <label draggable="true" data-col="title"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="title" checked> Title</label>
-              <label draggable="true" data-col="topic"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="topic" checked> First Message</label>
               <label draggable="true" data-col="cat"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="cat" checked> Category</label>
               <label draggable="true" data-col="date"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="date" checked> Date</label>
               <label draggable="true" data-col="summary"><span class="col-drag-handle mi">drag_indicator</span><input type="checkbox" class="col-toggle" data-col="summary" checked> Summary</label>
@@ -1474,8 +1469,7 @@ def build_html(projects: dict) -> str:
     }}
 
     function highlightSearch(q) {{
-      // highlight in title-display and title-sub cells
-      document.querySelectorAll('.title-display, .title-sub').forEach(function(el) {{
+      document.querySelectorAll('.title-display').forEach(function(el) {{
         // restore original text (stored in data-orig)
         if (!el.dataset.orig) el.dataset.orig = el.textContent;
         var orig = el.dataset.orig;
@@ -2290,7 +2284,7 @@ def build_html(projects: dict) -> str:
     }}
 
     // ── Column drag-to-reorder ───────────────────────────────────────────────
-    // Columns that map directly to a <th>/<td> class (topic is inside title cell)
+    // Columns that map directly to a <th>/<td> class
     var REORDERABLE = ['title','star','label','notes','cat','date','summary','size','msgs','tok','cost'];
     // Full column order including fixed columns
     var FULL_COLS   = ['check','num','title','star','label','notes','summary','cat','date','size','msgs','tok','cost','menu'];
