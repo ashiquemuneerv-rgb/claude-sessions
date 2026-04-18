@@ -367,7 +367,7 @@ def scan():
 
 # Subset CDN link — only the icons actually used (~15 KB vs 3.8 MB full font)
 _FONT_ICONS = ",".join(sorted([
-    "arrow_forward", "bar_chart", "chat_bubble", "check", "close",
+    "bar_chart", "chat_bubble", "check", "close",
     "close_fullscreen", "content_copy", "dark_mode", "download",
     "drag_indicator", "expand_less", "expand_more", "folder_open", "history",
     "inventory_2", "keyboard", "light_mode", "more_vert", "open_in_full",
@@ -439,7 +439,7 @@ def render_table(sessions: list, proj_dir: str) -> str:
             <td class="title-cell col-title" data-id="{s['id']}">
               <div class="title-main"><span class="title-display" onclick="editTitle('{s['id']}', this)">Add title...</span></div>
               <div class="title-id">{esc(s['short_id'])}</div>
-              <button id="copybtn-{s['id']}" class="copy-resume-btn" onclick="copyResume('{s['id']}')" title="{esc(resume_cmd)}"><span class="mi mi-xs">arrow_forward</span> Copy resume cmd</button>
+              <button id="copybtn-{s['id']}" class="copy-resume-btn" onclick="copyResume('{s['id']}')" title="{esc(resume_cmd)}"><span class="mi mi-xs">content_copy</span> Copy resume cmd</button>
             </td>
             <td class="col-notes"><span class="notes-disp" id="notes-{s['id']}" onclick="editNotes('{s['id']}', this)">+</span></td>
             <td class="col-summary"><button class="sum-btn" onclick="openSummary('{s['id']}')"><span class="mi mi-sm">summarize</span> Summary</button></td>
@@ -501,6 +501,8 @@ def render_session_data(projects: dict) -> str:
                 f"category: {json.dumps(','.join(s['category']) if isinstance(s['category'], list) else s['category'])},"
                 f"messages: {json.dumps(s['all_messages'])},"
                 f"date_iso: {json.dumps(s['date_iso'])},"
+                f"msg_count: {s['msg_count']},"
+                f"size: {json.dumps(s['size'])},"
                 f"input_tokens: {s['input_tokens']},"
                 f"output_tokens: {s['output_tokens']},"
                 f"total_tokens: {s['total_tokens']},"
@@ -646,6 +648,7 @@ def build_html(projects: dict) -> str:
       --bg:var(--main-bg); --surface:var(--card-bg); --surface-2:#374151; --surface-3:#1f2937;
       --primary:var(--teal); --primary-dim:var(--teal-dim);
       --success:#34d399; --success-dim:#064e3b;
+      --warning:#fbbf24;
       --danger:#f87171; --danger-dim:#2a0e0e;
     }}
 
@@ -693,7 +696,7 @@ def build_html(projects: dict) -> str:
     .stats-bar{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:0 28px 20px;flex-shrink:0}}
     .stats-bar-secondary{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 28px 20px;flex-shrink:0}}
     .stat-card{{border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);border:1px solid var(--border);background:var(--card-bg);transition:transform .15s,box-shadow .15s}}
-    .stat-card:hover{{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}}
+    .stat-card:hover{{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.15)}}
     .stat-card.card-peach{{background:var(--card-peach);border-color:var(--card-peach-b)}}
     .stat-card.card-mint{{background:var(--card-mint);border-color:var(--card-mint-b)}}
     .stat-card.card-lavender{{background:var(--card-lavender);border-color:var(--card-lavender-b)}}
@@ -708,7 +711,7 @@ def build_html(projects: dict) -> str:
     .stat-label{{font-size:11px;color:var(--text-2);margin-top:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:500}}
 
     /* ── Heatmap Hero Card ──────────────────────────────────────────────── */
-    .heatmap-card{{background:var(--teal);border-radius:16px;padding:22px 26px;margin:0 28px 20px;box-shadow:0 4px 24px rgba(13,148,136,.3);flex-shrink:0;transition:padding .2s;position:relative;overflow:hidden}}
+    .heatmap-card{{background:var(--teal);border-radius:16px;padding:22px 26px;margin:0 28px 20px;box-shadow:var(--shadow);flex-shrink:0;transition:padding .2s;position:relative;overflow:hidden}}
     .heatmap-card::before{{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 60%);pointer-events:none}}
     body.dark .heatmap-card{{background:var(--card-bg);border:1px solid var(--teal);box-shadow:none}}
     .heatmap-section{{position:relative;z-index:1}}
@@ -781,9 +784,9 @@ def build_html(projects: dict) -> str:
     .fq-btn{{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}}
     .fq-btn:hover{{border-color:var(--primary);color:var(--primary)}}
     .filter-date-row{{display:flex;align-items:center;gap:8px}}
-    .filter-date{{background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);outline:none;cursor:pointer;color-scheme:dark;flex:1}}
+    .filter-date{{background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);outline:none;cursor:pointer;color-scheme:light;flex:1}}
     .filter-date:focus{{border-color:var(--primary)}}
-    body.light .filter-date{{color-scheme:light}}
+    body.dark .filter-date{{color-scheme:dark}}
     .filter-sep{{color:var(--text-3);font-size:12px}}
     .filter-cat-grid{{display:grid;grid-template-columns:1fr 1fr;gap:4px}}
     .filter-cat-lbl{{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer;padding:4px 6px;border-radius:var(--radius-sm);transition:background .12s;user-select:none}}
@@ -901,7 +904,7 @@ def build_html(projects: dict) -> str:
     .row-menu-wrap{{position:relative;display:inline-block}}
     .row-menu-btn{{background:none;border:none;color:var(--text-3);cursor:pointer;padding:2px 4px;border-radius:var(--radius-sm);transition:color .15s,background .15s;line-height:1;display:flex;align-items:center}}
     .row-menu-btn:hover{{color:var(--text);background:var(--surface-3)}}
-    .row-menu-dropdown{{display:none;position:absolute;right:0;top:100%;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;min-width:150px;padding:4px 0}}
+    .row-menu-dropdown{{display:none;position:absolute;right:0;top:100%;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);z-index:100;min-width:150px;padding:4px 0}}
     .row-menu-dropdown.open{{display:block}}
     .row-menu-dropdown button{{display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:background .12s}}
     .row-menu-dropdown button:hover{{background:var(--teal-dim);color:var(--teal-text)}}
@@ -914,8 +917,8 @@ def build_html(projects: dict) -> str:
     .resume-btn{{font-family:"SF Mono","Fira Code",monospace;font-size:10px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:4px 10px;border-radius:var(--radius-sm);cursor:default;user-select:all;white-space:nowrap;display:inline-block}}
 
     /* Search highlight */
-    .hl{{background:rgba(251,191,36,.25);color:var(--text);border-radius:2px;padding:0 1px}}
-    body.light .hl{{background:rgba(251,191,36,.45)}}
+    .hl{{background:rgba(251,191,36,.35);color:var(--text);border-radius:2px;padding:0 1px}}
+    body.dark .hl{{background:rgba(251,191,36,.22);color:var(--text)}}
 
     /* Modal — frosted glass */
     .modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:24px}}
@@ -1001,7 +1004,7 @@ def build_html(projects: dict) -> str:
     .label-dot.lc-pink{{background:#ec4899;border-color:#ec4899}}
     .label-picker{{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.7);animation:fadeUp .12s ease}}
     .lp-swatch{{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s,border-color .12s;flex-shrink:0}}
-    .lp-swatch:hover{{transform:scale(1.3);border-color:rgba(255,255,255,.5)}}
+    .lp-swatch:hover{{transform:scale(1.3);border-color:var(--text)}}
     .lp-none{{background:none;border:1px dashed var(--border-2);font-size:11px;color:var(--text-3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;transition:border-color .12s,color .12s}}
     .lp-none:hover{{border-color:var(--text);color:var(--text)}}
     /* Notes */
@@ -1027,9 +1030,9 @@ def build_html(projects: dict) -> str:
 
     /* Message copy button */
     .msg-bubble{{position:relative}}
-    .msg-copy-btn{{position:absolute;top:5px;right:6px;background:rgba(0,0,0,.4);border:none;color:var(--text-2);font-size:10px;cursor:pointer;padding:2px 6px;border-radius:3px;opacity:0;transition:opacity .15s;line-height:1.4}}
+    .msg-copy-btn{{position:absolute;top:5px;right:6px;background:var(--surface-3);border:1px solid var(--border);color:var(--text-3);font-size:10px;cursor:pointer;padding:2px 6px;border-radius:3px;opacity:0;transition:opacity .15s,background .15s,color .15s;line-height:1.4}}
     .msg-row:hover .msg-copy-btn{{opacity:1}}
-    .msg-copy-btn:hover{{color:#fff;background:rgba(0,0,0,.7)}}
+    .msg-copy-btn:hover{{color:var(--text);background:var(--surface-2)}}
     /* Token / cost columns */
     .tok{{white-space:nowrap;color:var(--teal);font-size:12px;cursor:default;font-weight:500}}
     .cost-cell{{white-space:nowrap;color:var(--success);font-size:12px;font-weight:500}}
@@ -1503,7 +1506,7 @@ def build_html(projects: dict) -> str:
       body.innerHTML = '';
 
       if (!s.messages || s.messages.length === 0) {{
-        body.innerHTML = '<div style="color:#444;font-size:13px;padding:20px 0">No messages found in this session.</div>';
+        body.innerHTML = '<div style="font-size:13px;padding:20px 0;color:var(--text-2)">No messages found in this session.</div>';
       }} else {{
         var lastDate = null;
 
@@ -1620,6 +1623,7 @@ def build_html(projects: dict) -> str:
       if (page) page.classList.add('active');
       var nav = document.querySelector('.nav-item[data-main="' + name + '"]');
       if (nav) nav.classList.add('active');
+      localStorage.setItem('claude-main-page', name);
     }}
 
     // ── Sub-tab switching (inside Sessions page) ────────────────────────────
@@ -1634,6 +1638,17 @@ def build_html(projects: dict) -> str:
       clearSelection();
       var q = document.getElementById('search-input').value;
       if (q) doSearch(q); else applyFilters();
+      localStorage.setItem('claude-active-tab', name);
+    }}
+    function restoreActiveTab() {{
+      var mainPage = localStorage.getItem('claude-main-page');
+      if (mainPage && document.getElementById('main-' + mainPage)) {{
+        showMain(mainPage);
+      }}
+      var saved = localStorage.getItem('claude-active-tab');
+      if (saved && document.getElementById('page-' + saved)) {{
+        showTab(saved);
+      }}
     }}
 
     // ── Utils ────────────────────────────────────────────────────────────────
@@ -1815,33 +1830,88 @@ def build_html(projects: dict) -> str:
       var ids = Object.keys(sessions).filter(function(id){{ return !!localStorage.getItem(archKey(id)); }});
       var badge = document.getElementById('nb-archived');
       if (badge) badge.textContent = ids.length;
-      if (ids.length === 0) {{ page.innerHTML = '<p style="color:#555;padding:24px;font-size:13px">No archived sessions.</p>'; return; }}
+      if (ids.length === 0) {{ page.innerHTML = '<p style="padding:24px;font-size:13px;color:var(--text-2)">No archived sessions.</p>'; return; }}
       ids.sort(function(a,b){{ return (sessions[b].date_iso||'').localeCompare(sessions[a].date_iso||''); }});
-      var rows = ids.map(function(id) {{
-        var s = sessions[id];
-        var title = localStorage.getItem('claude-title-'+id) || s.title;
-        var corpus = (id+' '+title+' '+(s.category||'')+' '+(s.title||'')).toLowerCase();
-        return '<tr data-id="'+id+'" data-search="'+esc(corpus)+'">' +
-          '<td class="session-id">'+esc(id.slice(0,8))+'<span>'+esc(id.slice(8))+'</span></td>' +
-          '<td class="title-cell"><span class="title-display '+(localStorage.getItem('claude-title-'+id)?'has-title':'placeholder')+'">'+esc(title)+'</span></td>' +
-          '<td class="date">'+esc((s.date_iso||'').slice(0,16).replace('T',' '))+'</td>' +
-          '<td class="msgs">'+(s.msg_count||0)+'</td>' +
-          '<td><button class="view-btn" onclick="openModal(\\\''+id+'\\\')"><span class="mi mi-sm">chat_bubble</span></button></td>' +
-          '<td><button class="arch-restore-btn" onclick="restoreSession(\\\''+id+'\\\')"><span class="mi mi-sm">restore</span> Restore</button></td>' +
-          '</tr>';
-      }}).join('');
-      page.innerHTML = '<div class="project-path">Archived sessions &mdash; click Restore to bring back</div>' +
-        '<div class="table-wrap"><table><thead><tr>' +
-        '<th>Session ID</th><th>Title</th><th>Date</th><th>Msgs</th><th>Chats</th><th></th><th></th>' +
-        '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+      var rows = ids.map(function(id, i){{ return buildTabRow(id, i+1, true); }}).join('');
+      page.innerHTML = '<div class="project-path"><span class="mi mi-sm">inventory_2</span> Archived sessions &mdash; restore from the Actions menu</div>' +
+        '<div class="table-wrap"><table>' + buildTabHeader() + '<tbody>'+rows+'</tbody></table></div>';
+      loadStars(); loadLabels(); loadNotes(); loadTitles(); applyColOrder(); applyFilters();
     }}
 
-    // ── Recent tab ───────────────────────────────────────────────────────────
+    // ── Tab helpers ──────────────────────────────────────────────────────────
     function fmtTok(n) {{
       if (!n) return '\u2014';
       if (n>=1000000) return (n/1000000).toFixed(1)+'M';
       if (n>=1000) return (n/1000).toFixed(1)+'K';
       return String(n);
+    }}
+    function fmtCost(c) {{
+      if (!c) return '\u2014';
+      if (c < 0.001) return '&lt;$0.001';
+      return '$' + c.toFixed(c < 0.01 ? 4 : c < 1 ? 3 : 2);
+    }}
+    function catPills(cats) {{
+      if (!cats) return '';
+      var arr = cats.split(',').filter(Boolean);
+      return '<div class="cat-pills">' + arr.map(function(c) {{
+        c = c.trim();
+        var cls = 'cat-pill cp-' + c.toLowerCase().replace(/[^a-z0-9]/g,'');
+        return '<span class="' + cls + '">' + esc(c) + '</span>';
+      }}).join(' ') + '</div>';
+    }}
+    function buildTabHeader() {{
+      return '<thead><tr>' +
+        '<th class="col-check"><input type="checkbox" class="select-all-cb" onclick="toggleSelectAll()" title="Select all"></th>' +
+        '<th class="col-num">#</th>' +
+        '<th class="col-star"><span class="mi mi-sm" style="text-transform:none">star</span></th>' +
+        '<th class="col-label">Label</th>' +
+        '<th class="col-title">Title</th>' +
+        '<th class="col-notes">Notes</th>' +
+        '<th class="col-summary">Summary</th>' +
+        '<th class="col-cat">Cat</th>' +
+        '<th class="col-date">Date</th>' +
+        '<th class="col-size">Size</th>' +
+        '<th class="col-msgs">Msgs</th>' +
+        '<th class="col-tok">Tokens</th>' +
+        '<th class="col-cost">Cost</th>' +
+        '<th class="col-menu">Actions</th>' +
+        '</tr></thead>';
+    }}
+    function buildTabRow(id, idx, isArchived) {{
+      var s = sessions[id]; if (!s) return '';
+      var title = localStorage.getItem('claude-title-'+id) || s.title || id;
+      var hasTitle = !!localStorage.getItem('claude-title-'+id);
+      var corpus = (id+' '+title+' '+(s.category||'')+' '+(s.title||'')).toLowerCase();
+      var q = '\\\'' ;
+      var archiveBtn = isArchived
+        ? '<button onclick="restoreSession('+q+id+q+');closeRowMenus()"><span class="mi mi-sm">restore</span> Restore</button>'
+        : '<button onclick="archiveSession('+q+id+q+');closeRowMenus()"><span class="mi mi-sm">inventory_2</span> Archive</button>';
+      return '<tr data-id="'+id+'" data-search="'+esc(corpus)+'" data-date="'+(s.date_iso||'')+'" data-msgs="'+(s.msg_count||0)+'" data-tokens="'+(s.total_tokens||0)+'" data-cost="'+(s.cost_usd||0).toFixed(6)+'" data-cat="'+esc(s.category||'')+'">' +
+        '<td class="col-check"><input type="checkbox" class="row-check" id="chk-'+id+'" onchange="toggleRowCheck('+q+id+q+')"></td>' +
+        '<td class="num col-num">'+idx+'</td>' +
+        '<td class="col-star"><button class="star-btn" id="star-'+id+'" onclick="toggleStar('+q+id+q+')"><span class="mi">star</span></button></td>' +
+        '<td class="col-label"><span class="label-dot" id="ldot-'+id+'" onclick="openLabelPicker('+q+id+q+', this)" title="Set label"></span></td>' +
+        '<td class="title-cell col-title" data-id="'+id+'">' +
+          '<div class="title-main"><span class="title-display '+(hasTitle?'has-title':'placeholder')+'" onclick="editTitle('+q+id+q+', this)">'+esc(title)+'</span></div>' +
+          '<div class="title-id">'+esc(id.slice(0,8))+'</div>' +
+          '<button id="copybtn-'+id+'" class="copy-resume-btn" onclick="copyResume('+q+id+q+')" title="'+esc(s.resume||'')+'"><span class="mi mi-xs">content_copy</span> Copy resume cmd</button>' +
+        '</td>' +
+        '<td class="col-notes"><span class="notes-disp" id="notes-'+id+'" onclick="editNotes('+q+id+q+', this)">+</span></td>' +
+        '<td class="col-summary"><button class="sum-btn" onclick="openSummary('+q+id+q+')"><span class="mi mi-sm">summarize</span> Summary</button></td>' +
+        '<td class="col-cat">'+catPills(s.category||'')+'</td>' +
+        '<td class="date col-date" title="'+(s.date_iso||'').slice(0,16).replace('T',' ')+'" data-iso="'+esc(s.date_iso||'')+'">'+relDate(s.date_iso||'')+'</td>' +
+        '<td class="size col-size">'+esc(s.size||'')+'</td>' +
+        '<td class="msgs col-msgs">'+(s.msg_count||0)+'</td>' +
+        '<td class="tok col-tok" title="Input: '+(s.input_tokens||0).toLocaleString()+'&#10;Output: '+(s.output_tokens||0).toLocaleString()+'">'+fmtTok(s.total_tokens||0)+'</td>' +
+        '<td class="cost-cell col-cost">'+fmtCost(s.cost_usd||0)+'</td>' +
+        '<td class="col-menu"><div class="row-menu-wrap">' +
+          '<button class="row-menu-btn" onclick="toggleRowMenu(this)"><span class="mi" style="font-size:20px">more_vert</span></button>' +
+          '<div class="row-menu-dropdown">' +
+            '<button onclick="openModal('+q+id+q+');closeRowMenus()"><span class="mi mi-sm">chat_bubble</span> View Chat</button>' +
+            archiveBtn +
+          '</div>' +
+        '</div></td>' +
+      '</tr>';
     }}
     function copyText(text, btn) {{
       navigator.clipboard.writeText(text).then(function() {{
@@ -1872,27 +1942,11 @@ def build_html(projects: dict) -> str:
       }}).sort(function(a,b){{ return (sessions[b].date_iso||'').localeCompare(sessions[a].date_iso||''); }});
       var badge = document.getElementById('nb-recent');
       if (badge) badge.textContent = ids.length;
-      if (ids.length === 0) {{ page.innerHTML = '<p style="color:#555;padding:24px;font-size:13px">No sessions in the last 7 days.</p>'; return; }}
-      var rows = ids.map(function(id) {{
-        var s = sessions[id];
-        var title = localStorage.getItem('claude-title-'+id) || s.title;
-        var star  = localStorage.getItem('claude-star-'+id) ? '<span class="mi mi-sm star-filled">star</span>' : '';
-        var corpus = (id+' '+title+' '+(s.category||'')+' '+(s.title||'')).toLowerCase();
-        return '<tr data-id="'+id+'" data-date="'+(s.date_iso||'')+'" data-cat="'+esc(s.category||'')+'" data-search="'+esc(corpus)+'">' +
-          '<td style="text-align:center">'+star+'</td>' +
-          '<td class="session-id">'+esc(id.slice(0,8))+'<span>'+esc(id.slice(8))+'</span></td>' +
-          '<td class="title-cell"><span class="title-display '+(localStorage.getItem('claude-title-'+id)?'has-title':'placeholder')+'">'+esc(title)+'</span></td>' +
-          '<td class="date" title="'+(s.date_iso||'').slice(0,16).replace('T',' ')+'">'+relDate(s.date_iso||'')+'</td>' +
-          '<td class="msgs">'+(s.msg_count||0)+'</td>' +
-          '<td class="tok">'+fmtTok(s.total_tokens||0)+'</td>' +
-          '<td><button class="view-btn" onclick="openModal(\\\''+id+'\\\')"><span class="mi mi-sm">chat_bubble</span></button></td>' +
-          '<td><button class="copy-btn" data-res="'+esc(s.resume||'')+'" onclick="copyText(this.dataset.res,this)"><span class="mi mi-sm">arrow_forward</span> Copy</button></td>' +
-          '</tr>';
-      }}).join('');
+      if (ids.length === 0) {{ page.innerHTML = '<p style="padding:24px;font-size:13px;color:var(--text-2)">No sessions in the last 7 days.</p>'; return; }}
+      var rows = ids.map(function(id, i){{ return buildTabRow(id, i+1, false); }}).join('');
       page.innerHTML = '<div class="project-path"><span class="mi mi-sm">history</span> Sessions from the last 7 days &mdash; all projects</div>' +
-        '<div class="table-wrap"><table><thead><tr>' +
-        '<th></th><th>Session ID</th><th>Title</th><th>Date &amp; Time</th><th>Msgs</th><th>Tokens</th><th>Chats</th><th>Resume</th>' +
-        '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+        '<div class="table-wrap"><table>' + buildTabHeader() + '<tbody>'+rows+'</tbody></table></div>';
+      loadStars(); loadLabels(); loadNotes(); loadTitles(); applyColOrder(); applyFilters();
     }}
 
     // ── Heatmap ──────────────────────────────────────────────────────────────
@@ -2011,7 +2065,7 @@ def build_html(projects: dict) -> str:
     }}
     function toggleRowCheck(id) {{ updateBulkBar(); }}
     function toggleSelectAll() {{
-      var master = document.getElementById('select-all');
+      var master = (event && event.currentTarget) || document.getElementById('select-all');
       getVisibleRows().forEach(function(row) {{
         var cb = document.getElementById('chk-' + row.getAttribute('data-id'));
         if (cb) cb.checked = master.checked;
@@ -2436,6 +2490,7 @@ def build_html(projects: dict) -> str:
     buildArchivedTab();
     applyDeletions();
     applyFilters();
+    restoreActiveTab();
   </script>
 </body>
 </html>"""

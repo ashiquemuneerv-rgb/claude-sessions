@@ -114,6 +114,33 @@ Update `INPUT_COST_PER_M` and `OUTPUT_COST_PER_M` at the top of `generate.py`.
 
 ---
 
+## Changelog
+
+### v1.1.0 — 2026-04-18
+
+**Recent & Archived tabs — consistent with main table**
+- Both tabs now show the full column set: checkbox, #, star, label, title, notes, summary, category, date, size, messages, tokens, cost, actions
+- Column visibility toggles and drag-to-reorder now work across all tabs
+
+**Copy resume cmd button**
+- Icon changed to a copy icon (was arrow)
+
+**Page & tab state persists on reload**
+- The dashboard now remembers which page (Stats / Sessions) and which folder tab was open
+- Reloading brings you back to exactly where you were
+
+**Dark / light theme fixes**
+- Star buttons now show the correct colour in dark mode
+- Date filter picker renders correctly in both themes
+- Heatmap card shadow is now theme-aware
+- Search highlight (`.hl`) works correctly in dark mode
+- Message copy button uses theme colours instead of hardcoded black/white
+- Label swatch hover border is now theme-aware
+- Empty state text ("No archived sessions" etc.) is readable in dark mode
+- All remaining hardcoded shadow colours replaced with CSS variables
+
+---
+
 ## License
 
 MIT
