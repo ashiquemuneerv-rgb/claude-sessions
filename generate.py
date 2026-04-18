@@ -27,7 +27,6 @@ PROJECTS_DIR   = HOME / ".claude" / "projects"
 # Output directory: same folder as this script
 OUT_DIR        = Path(__file__).resolve().parent
 OUTPUT_FILE    = OUT_DIR / "index.html"
-DELETED_FILE   = OUT_DIR / "deleted.json"
 SUMMARIES_FILE = OUT_DIR / "summaries.json"
 
 # Claude Code stores project dirs as the filesystem path with "/" replaced by "-"
@@ -300,21 +299,8 @@ def human_size(path: Path) -> str:
 
 # ── Scan ─────────────────────────────────────────────────────────────────────
 
-def load_deleted() -> set:
-    """Load set of permanently-deleted session IDs from deleted.json."""
-    if DELETED_FILE.exists():
-        try:
-            return set(json.loads(DELETED_FILE.read_text()))
-        except Exception:
-            pass
-    return set()
-
-def save_deleted(ids: set):
-    DELETED_FILE.write_text(json.dumps(sorted(ids), indent=2))
-
 def scan():
     projects        = {}
-    deleted         = load_deleted()
     summary_cache   = load_summaries()
     cache_dirty     = False
 
@@ -328,8 +314,6 @@ def scan():
         sessions = []
         for jl in sorted(proj_dir.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True):
             sid = jl.stem
-            if sid in deleted:
-                continue
             messages, inp_tok, out_tok = read_session(jl)
             mtime    = datetime.fromtimestamp(jl.stat().st_mtime)
             mtime_ts = int(jl.stat().st_mtime)
@@ -384,7 +368,7 @@ def scan():
 # Subset CDN link — only the icons actually used (~15 KB vs 3.8 MB full font)
 _FONT_ICONS = ",".join(sorted([
     "arrow_forward", "bar_chart", "chat_bubble", "check", "close",
-    "close_fullscreen", "content_copy", "dark_mode", "delete", "download",
+    "close_fullscreen", "content_copy", "dark_mode", "download",
     "drag_indicator", "expand_less", "expand_more", "folder_open", "history",
     "inventory_2", "keyboard", "light_mode", "more_vert", "open_in_full",
     "restore", "search", "star", "summarize", "terminal", "tune", "unfold_more",
@@ -473,7 +457,6 @@ def render_table(sessions: list, proj_dir: str) -> str:
                 <div class="row-menu-dropdown">
                   <button onclick="openModal('{s['id']}');closeRowMenus()"><span class="mi mi-sm">chat_bubble</span> View Chat</button>
                   <button onclick="archiveSession('{s['id']}');closeRowMenus()"><span class="mi mi-sm">inventory_2</span> Archive</button>
-                  <button class="row-menu-danger" onclick="confirmDelete('{s['id']}');closeRowMenus()"><span class="mi mi-sm">delete</span> Delete</button>
                 </div>
               </div>
             </td>
@@ -510,14 +493,12 @@ def render_session_data(projects: dict) -> str:
     for sessions in projects.values():
         for s in sessions:
             resume_cmd = f"{s['resume_prefix']}claude --resume {s['id']}"
-            delete_cmd = f"rm \"{s['file_path']}\""
             entries.append(
                 f"'{esc(s['id'])}': {{"
                 f"title: {json.dumps(s['first_msg'][:120])},"
                 f"short_title: {json.dumps(s['short_title'])},"
                 f"meta: {json.dumps(s['id'] + ' · ' + s['date'] + ' · ' + str(s['msg_count']) + ' msgs · ' + fmt_tokens(s['total_tokens']) + ' tokens · ' + fmt_cost(s['cost_usd']))},"
                 f"resume: {json.dumps(resume_cmd)},"
-                f"deleteCmd: {json.dumps(delete_cmd)},"
                 f"summary: {json.dumps(s['summary'])},"
                 f"category: {json.dumps(','.join(s['category']) if isinstance(s['category'], list) else s['category'])},"
                 f"messages: {json.dumps(s['all_messages'])},"
@@ -771,8 +752,6 @@ def build_html(projects: dict) -> str:
     .bulk-btn{{font-size:11px;padding:5px 12px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;transition:all .15s;border:1px solid transparent}}
     .bulk-arch{{background:var(--surface-2);border-color:var(--border);color:var(--text-2)}}
     .bulk-arch:hover{{border-color:var(--primary);color:var(--primary)}}
-    .bulk-del{{background:var(--danger-dim);border-color:var(--danger);color:var(--danger)}}
-    .bulk-del:hover{{opacity:.8}}
     .bulk-export{{background:var(--success-dim);border-color:var(--success);color:var(--success)}}
     .bulk-export:hover{{opacity:.8}}
     .bulk-clr{{background:none;border-color:var(--border);color:var(--text-3)}}
@@ -978,8 +957,6 @@ def build_html(projects: dict) -> str:
     .sum-popup-body{{padding:16px 18px;font-size:13px;color:var(--text-2);line-height:1.75}}
 
     /* Delete/archive buttons */
-    .del-btn{{background:none;border:none;color:var(--text-3);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:var(--radius-sm);transition:color .15s,background .15s;line-height:1}}
-    .del-btn:hover{{color:var(--danger);background:var(--danger-dim)}}
     .arch-btn{{background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:4px 6px;border-radius:var(--radius-sm);transition:color .15s,background .15s;line-height:1}}
     .arch-btn:hover{{color:var(--primary);background:var(--primary-dim)}}
     .arch-restore-btn{{font-size:11px;padding:4px 10px;background:var(--primary-dim);border:1px solid var(--border);color:var(--primary);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;white-space:nowrap}}
@@ -990,14 +967,9 @@ def build_html(projects: dict) -> str:
     .del-modal-header{{padding:16px 20px;border-bottom:1px solid var(--border)}}
     .del-modal-title{{font-size:14px;font-weight:600;color:var(--danger)}}
     .del-modal-body{{padding:16px 20px}}
-    .del-session-info{{font-size:12px;color:var(--text-2);margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);border:1px solid var(--border);line-height:1.6}}
-    .del-cmd-label{{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}}
-    .del-cmd-box{{font-family:"SF Mono",monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--warning);padding:8px 12px;border-radius:var(--radius-sm);user-select:all;word-break:break-all;cursor:text;line-height:1.6}}
     .del-modal-footer{{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}}
     .btn-cancel{{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:12px;padding:7px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s}}
     .btn-cancel:hover{{background:var(--surface-3);color:var(--text)}}
-    .btn-delete{{background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:12px;padding:7px 16px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:background .15s}}
-    .btn-delete:hover{{background:var(--danger);color:#fff}}
 
     /* Keyboard shortcuts overlay */
     .kbd-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;padding:24px}}
@@ -1279,7 +1251,6 @@ def build_html(projects: dict) -> str:
         <span class="bulk-count" id="bulk-count">0 selected</span>
         <div class="bulk-sep"></div>
         <button class="bulk-btn bulk-arch"   onclick="bulkArchive()"><span class="mi mi-sm">inventory_2</span> Archive</button>
-        <button class="bulk-btn bulk-del"    onclick="bulkDelete()"><span class="mi mi-sm">delete</span> Delete</button>
         <div class="bulk-sep"></div>
         <div class="bulk-label-row">
           <span>Label:</span>
@@ -1360,23 +1331,6 @@ def build_html(projects: dict) -> str:
     </div>
   </div>
 
-  <!-- DELETE CONFIRM MODAL -->
-  <div class="modal-overlay" id="del-overlay" onclick="handleDelOverlay(event)">
-    <div class="del-modal">
-      <div class="del-modal-header">
-        <div class="del-modal-title">Delete session?</div>
-      </div>
-      <div class="del-modal-body">
-        <div class="del-session-info" id="del-session-info"></div>
-        <div class="del-cmd-label">To permanently delete the file, run in terminal:</div>
-        <div class="del-cmd-box" id="del-cmd-box"></div>
-      </div>
-      <div class="del-modal-footer">
-        <button class="btn-cancel" onclick="closeDelModal()">Cancel</button>
-        <button class="btn-delete" onclick="doDelete()">Hide session</button>
-      </div>
-    </div>
-  </div>
 
   <!-- KEYBOARD SHORTCUTS -->
   <div class="kbd-overlay" id="kbd-overlay" onclick="if(event.target===this)closeKbd()">
@@ -1722,52 +1676,11 @@ def build_html(projects: dict) -> str:
     document.addEventListener('click', function(e) {{
       if (!e.target.closest('.row-menu-wrap')) closeRowMenus();
     }});
-    function confirmDelete(id) {{
-      var s = sessions[id];
-      if (!s) return;
-      pendingDeleteId = id;
-      var title = localStorage.getItem(titleKey(id)) || s.title;
-      document.getElementById('del-session-info').innerHTML =
-        '<strong style="color:#e2e2e2">' + esc(title) + '</strong><br>' +
-        '<span style="color:#555">' + esc(s.meta) + '</span>';
-      document.getElementById('del-cmd-box').textContent = s.deleteCmd || '';
-      document.getElementById('del-overlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }}
-
-    function closeDelModal() {{
-      document.getElementById('del-overlay').classList.remove('open');
-      document.body.style.overflow = '';
-      pendingDeleteId = null;
-    }}
-
-    function handleDelOverlay(e) {{
-      if (e.target === document.getElementById('del-overlay')) closeDelModal();
-    }}
-
-    function doDelete() {{
-      var id = pendingDeleteId;
-      if (!id) return;
-      localStorage.setItem('claude-deleted-' + id, '1');
-      var row = document.querySelector('tr[data-id="' + id + '"]');
-      if (row) {{
-        row.style.transition = 'opacity .3s';
-        row.style.opacity    = '0';
-        setTimeout(function() {{ row.style.display = 'none'; }}, 300);
-      }}
-      var cmd = (sessions[id] || {{}}).deleteCmd || '';
-      closeDelModal();
-      showToast('Session hidden. To delete permanently: ' + cmd);
-      // refresh tab counts
-      doSearch(document.getElementById('search-input').value);
-    }}
-
     function applyDeletions() {{
       document.querySelectorAll('tr[data-id]').forEach(function(row) {{
         var id = row.getAttribute('data-id');
         var inArchived = !!row.closest('#page-archived');
-        if (localStorage.getItem('claude-deleted-' + id) ||
-            (!inArchived && localStorage.getItem('claude-archived-' + id))) {{
+        if (!inArchived && localStorage.getItem('claude-archived-' + id)) {{
           row.dataset.hidden = '1';
           row.style.display = 'none';
         }}
@@ -1918,7 +1831,6 @@ def build_html(projects: dict) -> str:
           '<td class="msgs">'+(s.msg_count||0)+'</td>' +
           '<td><button class="view-btn" onclick="openModal(\\\''+id+'\\\')"><span class="mi mi-sm">chat_bubble</span></button></td>' +
           '<td><button class="arch-restore-btn" onclick="restoreSession(\\\''+id+'\\\')"><span class="mi mi-sm">restore</span> Restore</button></td>' +
-          '<td><button class="del-btn" onclick="confirmDelete(\\\''+id+'\\\')"><span class="mi mi-sm">delete</span></button></td>' +
           '</tr>';
       }}).join('');
       page.innerHTML = '<div class="project-path">Archived sessions &mdash; click Restore to bring back</div>' +
@@ -2132,18 +2044,6 @@ def build_html(projects: dict) -> str:
       ids.forEach(function(id) {{ archiveSession(id); }});
       clearSelection();
       showToast('Archived ' + ids.length + ' session(s).');
-    }}
-    function bulkDelete() {{
-      var ids = getSelected(); if (!ids.length) return;
-      ids.forEach(function(id) {{
-        localStorage.setItem('claude-deleted-' + id, '1');
-        document.querySelectorAll('tr[data-id="' + id + '"]').forEach(function(row) {{
-          row.dataset.hidden = '1'; row.style.display = 'none';
-        }});
-      }});
-      clearSelection();
-      doSearch(document.getElementById('search-input').value);
-      showToast(ids.length + ' session(s) hidden.');
     }}
     function bulkSetLabel(color) {{
       var ids = getSelected(); if (!ids.length) return;
