@@ -989,7 +989,7 @@ def build_html(projects: dict) -> str:
 
     /* Sort */
     .sortable{{cursor:pointer;user-select:none}}.sortable:hover{{color:var(--text-2)}}
-    .sort-icon{{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 20;font-size:14px;color:var(--text-3);margin-left:2px;vertical-align:middle;line-height:1;display:inline-block;user-select:none}}
+    .sort-icon{{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 20;font-size:14px;color:var(--text-3);margin-left:2px;vertical-align:middle;line-height:1;display:inline-block;user-select:none;text-transform:none}}
     .sortable.sort-asc .sort-icon,.sortable.sort-desc .sort-icon{{color:var(--primary)}}
     /* Stars */
     .col-star{{text-align:center;width:32px;padding:8px 4px}}
@@ -1044,7 +1044,7 @@ def build_html(projects: dict) -> str:
     .col-check input[type=checkbox]{{accent-color:var(--primary);cursor:pointer;width:13px;height:13px}}
 
     /* ── Material Symbols Outlined ──────────────────────────────────────── */
-    .mi{{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;font-size:18px;line-height:1;vertical-align:middle;user-select:none;display:inline-block;flex-shrink:0}}
+    .mi{{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;font-size:18px;line-height:1;vertical-align:middle;user-select:none;display:inline-block;flex-shrink:0;text-transform:none}}
     .mi-sm{{font-size:15px}}.mi-xs{{font-size:13px}}
     .star-btn .mi{{font-size:17px;transition:font-variation-settings .15s,color .15s}}
     .star-btn.starred .mi{{font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 20}}
