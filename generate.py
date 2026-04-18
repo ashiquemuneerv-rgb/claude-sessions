@@ -480,7 +480,7 @@ def render_table(sessions: list, proj_dir: str) -> str:
             <th class="col-msgs sortable" onclick="sortBy('msgs',this)">Msgs <span class="sort-icon">unfold_more</span></th>
             <th class="col-tok sortable" onclick="sortBy('tokens',this)" title="Hover rows for breakdown">Tokens <span class="sort-icon">unfold_more</span></th>
             <th class="col-cost sortable" onclick="sortBy('cost',this)">Cost <span class="sort-icon">unfold_more</span></th>
-            <th class="col-menu"></th>
+            <th class="col-menu">Actions</th>
           </tr>
         </thead>
         <tbody>{''.join(rows)}
