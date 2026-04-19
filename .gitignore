@@ -13,3 +13,4 @@ material-symbols.woff2
 
 # macOS
 .DS_Store
+docs/screenshots/*.png
