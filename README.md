@@ -49,8 +49,6 @@ Open Finder → Documents → **claude-sessions**
 
 The Stats page is your usage overview — open it by clicking **Stats** in the left sidebar.
 
-![Stats page overview](docs/screenshots/stats-page.png)
-
 **What you see:**
 - **Total sessions, messages, tokens, and estimated cost** across all time
 - **Activity heatmap** — GitHub-style grid showing which days you used Claude Code most (hover a cell to see the date and session count)
@@ -65,8 +63,6 @@ The Stats page is your usage overview — open it by clicking **Stats** in the l
 
 Click **Sessions** in the sidebar to see your full session history.
 
-![Sessions page — folder view](docs/screenshots/sessions-page.png)
-
 **Sub-tabs across the top:**
 - **Recent** — sessions from the last 7 days across all projects
 - **Project folders** — one tab per project directory (e.g. `ViewTogether-Demo`, `friday-game`)
@@ -77,8 +73,6 @@ The dashboard remembers which tab you had open — reloading brings you back to 
 ---
 
 ### Search & Filter
-
-![Search and filter](docs/screenshots/search-filter.png)
 
 **Search** — click the search bar (or press `/`) and type anything. The table filters in real time across session titles, notes, labels, and categories.
 
@@ -92,8 +86,6 @@ Active filters appear as removable chips below the search bar.
 ---
 
 ### Session columns — show, hide, and reorder
-
-![Column menu](docs/screenshots/columns-menu.png)
 
 Click the **Cols** button (top-right of the sessions toolbar) to open the column menu:
 
@@ -110,8 +102,6 @@ Your column preferences are saved automatically and persist across reloads.
 
 Each row in the table is one session. Here's what you can do:
 
-![Session row actions](docs/screenshots/session-row.png)
-
 | Action | How |
 |--------|-----|
 | **Edit title** | Click the title text in any row — type and press Enter |
@@ -127,8 +117,6 @@ Each row in the table is one session. Here's what you can do:
 
 ### View full chat
 
-![Chat modal](docs/screenshots/chat-modal.png)
-
 Click **··· → View Chat** on any row to open the full conversation in a modal:
 
 - Scroll through all messages with timestamps
@@ -140,15 +128,11 @@ Click **··· → View Chat** on any row to open the full conversation in a mod
 
 ### AI Summary
 
-![Summary popup](docs/screenshots/summary.png)
-
 Click the **Summary** button on any session to see an AI-generated summary of what was discussed. Useful for quickly recalling what a session was about without reading the full chat.
 
 ---
 
 ### Bulk actions
-
-![Bulk action bar](docs/screenshots/bulk-actions.png)
 
 Select multiple sessions using the checkboxes (or the checkbox in the header to select all visible rows):
 
@@ -161,8 +145,6 @@ Select multiple sessions using the checkboxes (or the checkbox in the header to 
 ### Dark / Light mode
 
 Press `d` anywhere (or click the sun/moon icon in the sidebar bottom) to toggle between dark and light mode.
-
-![Dark mode](docs/screenshots/dark-mode.png)
 
 Your preference is saved automatically.
 
